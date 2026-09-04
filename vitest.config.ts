@@ -11,7 +11,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['packages/engine/src/**/*.ts', 'packages/shared/src/**/*.ts'],
-      exclude: ['packages/engine/src/types.ts'],
+      exclude: [
+        'packages/engine/src/types.ts',
+        'packages/shared/src/index.ts',
+        'packages/engine/src/index.ts',
+      ],
     },
     // RLS suite is also runnable via pnpm test:rls and is required by pnpm check
     fileParallelism: false,

@@ -117,6 +117,39 @@ describe('parseRuleDef', () => {
   it('throws ZodError from parseRuleDef on invalid input', () => {
     expect(() => parseRuleDef({ type: 'nope' })).toThrow(ZodError);
   });
+
+  it('rejects unknown column / output ids in decision tables', () => {
+    const table = validTable as Record<string, unknown>;
+    const badColumn = ruleDefSchema.safeParse({
+      ...table,
+      rows: [{ id: 'r', cells: { nope: null }, results: { fee: { kind: 'const', value: 1 } } }],
+    });
+    expect(badColumn.success).toBe(false);
+
+    const badResult = ruleDefSchema.safeParse({
+      ...table,
+      rows: [
+        {
+          id: 'r',
+          cells: { amount: null },
+          results: { missing: { kind: 'const', value: 1 } },
+        },
+      ],
+    });
+    expect(badResult.success).toBe(false);
+    if (!badResult.success) {
+      expect(badResult.error.issues.some((i) => i.message.includes('unknown output'))).toBe(true);
+    }
+
+    const badDefault = ruleDefSchema.safeParse({
+      ...table,
+      defaultRow: { missing: { kind: 'const', value: 0 } },
+    });
+    expect(badDefault.success).toBe(false);
+    if (!badDefault.success) {
+      expect(badDefault.error.issues.some((i) => i.message.includes('defaultRow'))).toBe(true);
+    }
+  });
 });
 
 describe('parseInputSchema', () => {

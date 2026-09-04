@@ -8,9 +8,7 @@ import {
   withServiceRole,
   signupViaAuthTrigger,
   sql,
-  ruleVersions,
 } from '@rule-engine/db';
-import { eq } from 'drizzle-orm';
 import { POST as createRule } from '../src/app/api/v1/rules/route.js';
 import { PATCH as patchRule, GET as getRule } from '../src/app/api/v1/rules/[id]/route.js';
 import { POST as testRule } from '../src/app/api/v1/rules/[id]/test/route.js';
@@ -329,14 +327,19 @@ describe('lifecycle.e2e', () => {
     );
     expect(statusAfterRollback.body.status).toBe('published');
 
-    await expect(
-      withServiceRole(direct.db, async (tx) => {
-        await tx
-          .update(ruleVersions)
-          .set({ changelog: 'tampered' })
-          .where(eq(ruleVersions.id, v1));
-      }),
-    ).rejects.toThrow(/immutable|append-only/i);
+    try {
+      await withServiceRole(direct.db, async (tx) => {
+        await tx.execute(
+          sql`update rule_versions set changelog = 'tampered' where id = ${v1}`,
+        );
+      });
+      expect.unreachable();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const cause =
+        err instanceof Error && err.cause instanceof Error ? err.cause.message : '';
+      expect(`${msg}\n${cause}`).toMatch(/immutable|append-only/i);
+    }
 
     expect(workspaceId).toBeTruthy();
   });

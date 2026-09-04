@@ -236,7 +236,7 @@ Monorepo, strict tsconfig, eslint/prettier, vitest, `.env.example`, `packages/sh
 ### Phase 1 — Engine *(done)*
 `compileRule` / `execute` for simple + decision table; operators; formulas; globals/output/template; ≥90% engine coverage; golden fixtures including `dynamic-pricing.json`; bench P95 &lt; 5 ms on 50-row warm table.
 
-### Phase 2 — Supabase persistence + RLS *(current when approved)*
+### Phase 2 — Supabase persistence + RLS *(done)*
 - Schema §3 including `global_variables`, `globals_version`, profile `users` FK → `auth.users`, trigger SQL.
 - Migrations via **`DIRECT_URL`** only; runtime docs/`createDb` use pooler + `{ prepare: false }`.
 - RLS policies on tenant tables; **`pnpm test:rls`** (A cannot read B's rules/globals/keys/executions).
@@ -245,12 +245,13 @@ Monorepo, strict tsconfig, eslint/prettier, vitest, `.env.example`, `packages/sh
 - Strip Fastify management CRUD if still present; keep Fastify skeleton `/health` only (execute is Phase 4).
 - DoD: migrations apply on direct URL; `test:rls` green; seed green; `pnpm check` green.
 
-### Phase 3 — Next.js management + lifecycle *(gate)*
-- `apps/web`: Supabase Auth session, rules/keys/globals CRUD via RLS.
+### Phase 3 — Next.js management + lifecycle *(done)*
+- `apps/web`: Supabase Auth session (cookie clients + middleware), rules/keys/globals CRUD via RLS.
 - Lifecycle: test → tested; publish → version + env pointer; rollback; versions list; edit resets to draft.
-- DoD: e2e create → test → publish staging → publish production → edit → rollback (against Supabase dev).
+- Auth profile trigger provisions workspace + owner; `rule_versions` append-only at the DB.
+- DoD: e2e create → test → publish staging → publish production → edit → rollback; `pnpm check` green.
 
-### Phase 4 — Execute API *(gate)*
+### Phase 4 — Execute API *(current when approved)*
 - Fastify `/v1/execute` + bulk; API-key auth (prefix + bcrypt); service_role queries **always** scoped by `workspace_id` (dedicated tests); batched execution log; in-process compile cache.
 - Load optional for MVP; cache invalidation via new `version_id` after publish.
 - DoD: execute tests + tenant-isolation tests on service_role path green.

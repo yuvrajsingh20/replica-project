@@ -16,7 +16,6 @@ const USER = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
 
 describe('Next.js management route handlers', () => {
   let direct: ReturnType<typeof createDirectDb>;
-  let workspaceId: string;
 
   beforeAll(async () => {
     process.env['ALLOW_TEST_USER_HEADER'] = '1';
@@ -42,12 +41,11 @@ describe('Next.js management route handlers', () => {
         restart identity cascade
       `);
       await tx.execute(sql`delete from auth.users where id = ${USER}::uuid`);
-      const provisioned = await signupViaAuthTrigger(tx, {
+      await signupViaAuthTrigger(tx, {
         userId: USER,
         email: 'd@test.local',
         workspaceName: 'D',
       });
-      workspaceId = provisioned.workspaceId;
     });
   });
 
