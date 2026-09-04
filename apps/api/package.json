@@ -1,0 +1,13 @@
+{
+  "name": "@rule-engine/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "dev": "node -e \"console.error('api dev is Phase 2'); process.exit(1)\"",
+    "db:migrate": "node -e \"console.error('db:migrate is Phase 2'); process.exit(1)\"",
+    "db:studio": "node -e \"console.error('db:studio is Phase 2'); process.exit(1)\""
+  }
+}
