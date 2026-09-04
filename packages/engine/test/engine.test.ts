@@ -114,6 +114,27 @@ describe('coercion', () => {
     expect((ok.output as Record<string, unknown>).at).toBeInstanceOf(Date);
   });
 
+  it('rejects non-object input and invalid Date instances', () => {
+    const rule = compileRule(simple('eq', 1), numericSchema);
+    expect(rule.execute(null).status).toBe('error');
+    expect(rule.execute('x').status).toBe('error');
+
+    const dateRule = compileRule(
+      {
+        type: 'simple',
+        when: {
+          logic: 'and',
+          items: [{ left: { kind: 'attr', path: 'when' }, op: 'is_not_null' }],
+        },
+        then: [{ kind: 'set', key: 'ok', value: { kind: 'const', value: true } }],
+      },
+      { attributes: [{ name: 'when', type: 'date', required: true }] },
+    );
+    expect(dateRule.execute({ when: new Date('not-a-date') }).status).toBe('error');
+    expect(dateRule.execute({ when: new Date('2021-06-01') }).status).toBe('success');
+    expect(dateRule.execute({ when: Date.parse('2021-06-01') }).status).toBe('success');
+  });
+
   it('coerces string attrs and rejects wrong types', () => {
     const schema: InputSchema = {
       attributes: [{ name: 's', type: 'string', required: true }],
@@ -258,11 +279,58 @@ describe('operators', () => {
   });
 
   it('throws CompileError for invalid matches regex const', () => {
-    expect(() =>
+    try {
       compileRule(simple('matches', '(', 's'), {
         attributes: [{ name: 's', type: 'string', required: true }],
-      }),
-    ).toThrow(CompileError);
+      });
+      expect.unreachable('expected CompileError');
+    } catch (err) {
+      expect(err).toBeInstanceOf(CompileError);
+      expect((err as CompileError).path).toContain('op');
+    }
+  });
+
+  it('matches an attr-backed regex at execute time', () => {
+    const def: RuleDef = {
+      type: 'simple',
+      when: {
+        logic: 'and',
+        items: [
+          {
+            left: { kind: 'attr', path: 's' },
+            op: 'matches',
+            right: { kind: 'attr', path: 's' },
+          },
+        ],
+      },
+      then: [{ kind: 'set', key: 'ok', value: { kind: 'const', value: true } }],
+    };
+    const rule = compileRule(def, {
+      attributes: [{ name: 's', type: 'string', required: true }],
+    });
+    expect(rule.execute({ s: 'hello' }).matched).toEqual(['then']);
+  });
+
+  it('in matches a scalar right operand', () => {
+    const def: RuleDef = {
+      type: 'simple',
+      when: {
+        logic: 'and',
+        items: [
+          {
+            left: { kind: 'attr', path: 's' },
+            op: 'in',
+            right: { kind: 'const', value: 'a' },
+          },
+        ],
+      },
+      then: [{ kind: 'set', key: 'ok', value: { kind: 'const', value: true } }],
+    };
+    const rule = compileRule(def, {
+      attributes: [{ name: 's', type: 'string', required: true }],
+    });
+    expect(rule.execute({ s: 'a' }).matched).toEqual(['then']);
+    expect(rule.execute({ s: 'b' }).status).toBe('no_match');
   });
 });
 
@@ -435,6 +503,37 @@ describe('decision table defaultRow', () => {
       status: 'success',
       matched: ['default'],
       output: { v: 'fallback' },
+    });
+  });
+});
+
+describe('decision table priority', () => {
+  it('runs lower priority before declaration order', () => {
+    const def: RuleDef = {
+      type: 'decision_table',
+      hitPolicy: 'first',
+      columns: [{ id: 'c', left: { kind: 'attr', path: 'n' }, op: 'gte' }],
+      outputs: [{ id: 'o', key: 'v' }],
+      rows: [
+        {
+          id: 'declared_first',
+          priority: 5,
+          cells: { c: { kind: 'const', value: 0 } },
+          results: { o: { kind: 'const', value: 'late' } },
+        },
+        {
+          id: 'declared_second',
+          priority: 1,
+          cells: { c: { kind: 'const', value: 0 } },
+          results: { o: { kind: 'const', value: 'early' } },
+        },
+      ],
+    };
+    const rule = compileRule(def, numericSchema);
+    expect(rule.execute({ n: 1 })).toMatchObject({
+      status: 'success',
+      matched: ['declared_second'],
+      output: { v: 'early' },
     });
   });
 });

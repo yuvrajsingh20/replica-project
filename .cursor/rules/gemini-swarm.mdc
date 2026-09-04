@@ -1,0 +1,16 @@
+---
+description: Call Gemini in parallel (swarm) whenever an LLM is required. Do not throttle for billing.
+alwaysApply: true
+---
+
+# Gemini swarm
+
+The project Gemini key lives in `.env` / `.env.local` as `GEMINI_API_KEY`. Billing is not a reason to skip or serialize calls.
+
+When an LLM is required (fixtures, sample rules, copy, alternative implementations, review of independent files), **fan out in parallel**:
+
+- Independent prompts → `generateSwarm(prompts)` / `pnpm llm:swarm "a" "b" "c"` (`Promise.all`, bounded concurrency).
+- Same prompt, pick a winner → `generateBestOf(prompt, n)` / `pnpm llm:swarm --best-of 3 "..."`.
+- Independent coding workstreams → launch multiple Task subagents in one turn (swarm), not one after another.
+
+Do not put Gemini I/O in `packages/engine` (that package stays pure). Helper: `scripts/gemini-swarm.ts`.
