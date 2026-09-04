@@ -10,7 +10,7 @@ export default defineConfig({
     include: ['packages/**/*.test.ts', 'apps/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['packages/engine/src/**/*.ts'],
+      include: ['packages/engine/src/**/*.ts', 'packages/shared/src/**/*.ts'],
       exclude: ['packages/engine/src/types.ts'],
     },
     // RLS suite is also runnable via pnpm test:rls and is required by pnpm check

@@ -105,6 +105,12 @@ importers:
       '@rule-engine/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@rule-engine/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@rule-engine/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@supabase/ssr':
         specifier: ^0.6.1
         version: 0.6.1(@supabase/supabase-js@2.115.0)
