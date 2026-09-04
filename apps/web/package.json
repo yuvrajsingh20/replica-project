@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@rule-engine/db": "workspace:*",
+    "@rule-engine/engine": "workspace:*",
+    "@rule-engine/shared": "workspace:*",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.1",
     "next": "^15.2.3",

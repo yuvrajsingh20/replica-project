@@ -48,9 +48,12 @@ export type {
 } from './dsl.js';
 
 export {
+  can,
+  next,
   can as canLifecycle,
   next as nextLifecycle,
   LifecycleError,
+  TRANSITIONS,
   TRANSITIONS as LIFECYCLE_TRANSITIONS,
 } from './lifecycle.js';
 

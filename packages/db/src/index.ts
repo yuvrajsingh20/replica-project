@@ -7,4 +7,5 @@ export * from './globals.js';
 export * from './service-role.js';
 export * from './crud.js';
 export * from './auth-trigger.js';
+export * from './lifecycle.js';
 export { sql } from 'drizzle-orm';
