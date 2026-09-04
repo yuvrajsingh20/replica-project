@@ -6,4 +6,5 @@ export * from './validate-definition.js';
 export * from './globals.js';
 export * from './service-role.js';
 export * from './crud.js';
+export * from './auth-trigger.js';
 export { sql } from 'drizzle-orm';

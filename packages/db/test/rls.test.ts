@@ -11,15 +11,13 @@ import {
   listGlobals,
   listRules,
   rules,
-  users,
   withServiceRole,
   withUser,
-  workspaces,
   globalVariables,
   apiKeys,
   executions,
   newId,
-  syncSessionWorkspace,
+  signupViaAuthTrigger,
 } from '../src/index.js';
 
 const USER_A = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -70,24 +68,18 @@ describe('RLS tenant isolation', () => {
       `);
       await tx.execute(sql`delete from auth.users where id in (${USER_A}::uuid, ${USER_B}::uuid)`);
 
-      await tx.execute(sql`
-        insert into auth.users (id, email) values
-          (${USER_A}::uuid, 'a@test.local'),
-          (${USER_B}::uuid, 'b@test.local')
-      `);
-
-      wsA = newId('ws');
-      wsB = newId('ws');
-      await tx.insert(workspaces).values([
-        { id: wsA, name: 'A', slug: `a-${wsA}`, globalsVersion: 0 },
-        { id: wsB, name: 'B', slug: `b-${wsB}`, globalsVersion: 0 },
-      ]);
-      await tx.insert(users).values([
-        { id: USER_A, workspaceId: wsA, email: 'a@test.local', role: 'owner' },
-        { id: USER_B, workspaceId: wsB, email: 'b@test.local', role: 'owner' },
-      ]);
-      await syncSessionWorkspace(tx, { userId: USER_A, workspaceId: wsA, role: 'owner' });
-      await syncSessionWorkspace(tx, { userId: USER_B, workspaceId: wsB, role: 'owner' });
+      const a = await signupViaAuthTrigger(tx, {
+        userId: USER_A,
+        email: 'a@test.local',
+        workspaceName: 'A',
+      });
+      const b = await signupViaAuthTrigger(tx, {
+        userId: USER_B,
+        email: 'b@test.local',
+        workspaceName: 'B',
+      });
+      wsA = a.workspaceId;
+      wsB = b.workspaceId;
 
       await createRule(tx, {
         workspaceId: wsA,

@@ -9,7 +9,7 @@ import { getDirectUrl } from './env.js';
 import { upsertGlobalInTransaction } from './globals.js';
 import { newId } from './ids.js';
 import { rules, users, workspaces } from './schema.js';
-import { syncSessionWorkspace, withServiceRole } from './service-role.js';
+import { withServiceRole } from './service-role.js';
 import { validateCompilableDefinition } from './validate-definition.js';
 
 const DEMO_USER_ID = '11111111-1111-1111-1111-111111111111';
@@ -25,41 +25,50 @@ async function main(): Promise<void> {
   const { db, client } = createDirectDb(getDirectUrl());
   try {
     await withServiceRole(db, async (tx) => {
-      const existing = await tx
+      const existingDemo = await tx
         .select()
         .from(workspaces)
         .where(eq(workspaces.slug, 'demo'))
         .limit(1);
-      if (existing[0]) {
-        process.stdout.write(`Seed already present (workspace ${existing[0].id}).\n`);
+      if (existingDemo[0]) {
+        process.stdout.write(`Seed already present (workspace ${existingDemo[0].id}).\n`);
         return;
       }
 
-      await tx.execute(sql`
-        insert into auth.users (id, email)
-        values (${DEMO_USER_ID}::uuid, 'owner@demo.local')
-        on conflict (id) do nothing
-      `);
+      const [existingProfile] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, DEMO_USER_ID))
+        .limit(1);
 
-      const workspaceId = newId('ws');
-      await tx.insert(workspaces).values({
-        id: workspaceId,
-        name: 'Demo Workspace',
-        slug: 'demo',
-        globalsVersion: 0,
-      });
-
-      await tx.insert(users).values({
-        id: DEMO_USER_ID,
-        workspaceId,
-        email: 'owner@demo.local',
-        role: 'owner',
-      });
-      await syncSessionWorkspace(tx, {
-        userId: DEMO_USER_ID,
-        workspaceId,
-        role: 'owner',
-      });
+      let workspaceId: string;
+      if (existingProfile) {
+        workspaceId = existingProfile.workspaceId;
+        await tx
+          .update(workspaces)
+          .set({ name: 'Demo Workspace', slug: 'demo' })
+          .where(eq(workspaces.id, workspaceId));
+      } else {
+        await tx.execute(sql`
+          insert into auth.users (id, email, raw_user_meta_data)
+          values (
+            ${DEMO_USER_ID}::uuid,
+            'owner@demo.local',
+            '{"workspace_name":"Demo Workspace"}'::jsonb
+          )
+        `);
+        const [profile] = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, DEMO_USER_ID))
+          .limit(1);
+        if (!profile) throw new Error('Auth trigger did not create demo profile');
+        workspaceId = profile.workspaceId;
+        await tx
+          .update(workspaces)
+          .set({ name: 'Demo Workspace', slug: 'demo' })
+          .where(eq(workspaces.id, workspaceId));
+      }
 
       const simple = loadFixture('simple-tier.json');
       const pricing = loadFixture('dynamic-pricing.json');

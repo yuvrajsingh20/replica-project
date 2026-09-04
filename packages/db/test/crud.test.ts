@@ -12,11 +12,8 @@ import {
   deleteGlobal,
   withServiceRole,
   withUser,
-  workspaces,
-  users,
-  newId,
   listGlobals,
-  syncSessionWorkspace,
+  signupViaAuthTrigger,
 } from '../src/index.js';
 
 const USER = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
@@ -48,23 +45,12 @@ describe('CRUD + globals_version transaction', () => {
         restart identity cascade
       `);
       await tx.execute(sql`delete from auth.users where id = ${USER}::uuid`);
-      await tx.execute(
-        sql`insert into auth.users (id, email) values (${USER}::uuid, 'c@test.local')`,
-      );
-      workspaceId = newId('ws');
-      await tx.insert(workspaces).values({
-        id: workspaceId,
-        name: 'C',
-        slug: `c-${workspaceId}`,
-        globalsVersion: 0,
-      });
-      await tx.insert(users).values({
-        id: USER,
-        workspaceId,
+      const provisioned = await signupViaAuthTrigger(tx, {
+        userId: USER,
         email: 'c@test.local',
-        role: 'owner',
+        workspaceName: 'C',
       });
-      await syncSessionWorkspace(tx, { userId: USER, workspaceId, role: 'owner' });
+      workspaceId = provisioned.workspaceId;
     });
   });
 

@@ -8,6 +8,13 @@
       "when": 0,
       "tag": "0000_phase2_supabase",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1,
+      "tag": "0001_auth_profile_trigger",
+      "breakpoints": true
     }
   ]
 }

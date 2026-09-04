@@ -5,10 +5,7 @@ import {
   createDirectDb,
   getDirectUrl,
   withServiceRole,
-  workspaces,
-  users,
-  newId,
-  syncSessionWorkspace,
+  signupViaAuthTrigger,
   sql,
 } from '@rule-engine/db';
 import { GET as listRules, POST as createRule } from '../src/app/api/v1/rules/route.js';
@@ -45,23 +42,12 @@ describe('Next.js management route handlers', () => {
         restart identity cascade
       `);
       await tx.execute(sql`delete from auth.users where id = ${USER}::uuid`);
-      await tx.execute(
-        sql`insert into auth.users (id, email) values (${USER}::uuid, 'd@test.local')`,
-      );
-      workspaceId = newId('ws');
-      await tx.insert(workspaces).values({
-        id: workspaceId,
-        name: 'D',
-        slug: `d-${workspaceId}`,
-        globalsVersion: 0,
-      });
-      await tx.insert(users).values({
-        id: USER,
-        workspaceId,
+      const provisioned = await signupViaAuthTrigger(tx, {
+        userId: USER,
         email: 'd@test.local',
-        role: 'owner',
+        workspaceName: 'D',
       });
-      await syncSessionWorkspace(tx, { userId: USER, workspaceId, role: 'owner' });
+      workspaceId = provisioned.workspaceId;
     });
   });
 
