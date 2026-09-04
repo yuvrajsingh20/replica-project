@@ -1,6 +1,9 @@
 import { createRule, listRules } from '@rule-engine/db';
 import { z } from 'zod';
-import { problem, withSession } from '../../../../lib/session.js';
+import { withAuth } from '../../../../lib/auth/require.js';
+import { problem } from '../../../../lib/session.js';
+
+export const dynamic = 'force-dynamic';
 
 const createBody = z.object({
   name: z.string().min(1),
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
     return problem(400, 'Bad Request', 'Invalid query');
   }
 
-  return withSession(request, async ({ db, workspaceId }) => {
+  return withAuth(request, 'viewer', async ({ db, workspaceId }) => {
     const result = await listRules(db, workspaceId, parsed.data);
     return Response.json(result);
   });
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
     return problem(400, 'Bad Request', 'Invalid body');
   }
 
-  return withSession(request, async ({ db, workspaceId, userId }) => {
+  return withAuth(request, 'editor', async ({ db, workspaceId, userId }) => {
     const result = await createRule(db, {
       workspaceId,
       userId,
