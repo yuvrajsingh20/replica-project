@@ -44,7 +44,11 @@ importers:
 
   apps/api: {}
 
-  packages/engine: {}
+  packages/engine:
+    dependencies:
+      '@rule-engine/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/shared:
     dependencies:

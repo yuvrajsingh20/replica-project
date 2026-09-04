@@ -1,0 +1,55 @@
+{
+  "name": "simple-tier",
+  "schema": {
+    "attributes": [
+      { "name": "order", "type": "json", "required": true }
+    ]
+  },
+  "def": {
+    "type": "simple",
+    "when": {
+      "logic": "and",
+      "items": [
+        {
+          "left": { "kind": "attr", "path": "order.total" },
+          "op": "gte",
+          "right": { "kind": "const", "value": 100 }
+        }
+      ]
+    },
+    "then": [
+      { "kind": "set", "key": "tier", "value": { "kind": "const", "value": "gold" } },
+      {
+        "kind": "formula",
+        "key": "bonus",
+        "expr": {
+          "kind": "binary",
+          "op": "*",
+          "left": { "kind": "attr", "path": "order.total" },
+          "right": { "kind": "const", "value": 0.1 }
+        }
+      }
+    ],
+    "else": [
+      { "kind": "set", "key": "tier", "value": { "kind": "const", "value": "silver" } }
+    ]
+  },
+  "cases": [
+    {
+      "input": { "order": { "total": 150 } },
+      "expected": {
+        "status": "success",
+        "matched": ["then"],
+        "output": { "tier": "gold", "bonus": 15 }
+      }
+    },
+    {
+      "input": { "order": { "total": 50 } },
+      "expected": {
+        "status": "success",
+        "matched": ["else"],
+        "output": { "tier": "silver" }
+      }
+    }
+  ]
+}

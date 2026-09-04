@@ -1,0 +1,85 @@
+{
+  "name": "dt-collect-and-all",
+  "schema": {
+    "attributes": [
+      { "name": "tags", "type": "list", "required": true },
+      { "name": "amount", "type": "numeric", "required": true }
+    ]
+  },
+  "def": {
+    "type": "decision_table",
+    "hitPolicy": "collect",
+    "columns": [
+      {
+        "id": "c_tag",
+        "left": { "kind": "attr", "path": "tags" },
+        "op": "any_in"
+      }
+    ],
+    "outputs": [
+      { "id": "o_label", "key": "label" },
+      { "id": "o_score", "key": "score" }
+    ],
+    "rows": [
+      {
+        "id": "vip",
+        "priority": 0,
+        "cells": {
+          "c_tag": [
+            { "kind": "const", "value": "vip" },
+            { "kind": "const", "value": "gold" }
+          ]
+        },
+        "results": {
+          "o_label": { "kind": "const", "value": "vip" },
+          "o_score": {
+            "formula": {
+              "kind": "call",
+              "name": "round",
+              "args": [
+                {
+                  "kind": "binary",
+                  "op": "*",
+                  "left": { "kind": "attr", "path": "amount" },
+                  "right": { "kind": "const", "value": 0.2 }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "promo",
+        "priority": 1,
+        "cells": {
+          "c_tag": [{ "kind": "const", "value": "promo" }]
+        },
+        "results": {
+          "o_label": { "kind": "const", "value": "promo" },
+          "o_score": { "kind": "const", "value": 1 }
+        }
+      }
+    ]
+  },
+  "cases": [
+    {
+      "input": { "tags": ["vip", "promo"], "amount": 100 },
+      "expected": {
+        "status": "success",
+        "matched": ["vip", "promo"],
+        "output": [
+          { "label": "vip", "score": 20 },
+          { "label": "promo", "score": 1 }
+        ]
+      }
+    },
+    {
+      "input": { "tags": ["other"], "amount": 10 },
+      "expected": {
+        "status": "no_match",
+        "matched": [],
+        "output": {}
+      }
+    }
+  ]
+}

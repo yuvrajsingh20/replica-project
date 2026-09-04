@@ -1,0 +1,74 @@
+{
+  "name": "dt-shipping-first",
+  "schema": {
+    "attributes": [
+      { "name": "country", "type": "string", "required": true },
+      { "name": "weight", "type": "numeric", "required": true }
+    ]
+  },
+  "def": {
+    "type": "decision_table",
+    "hitPolicy": "first",
+    "columns": [
+      { "id": "c_country", "left": { "kind": "attr", "path": "country" }, "op": "eq" },
+      { "id": "c_weight", "left": { "kind": "attr", "path": "weight" }, "op": "lte" }
+    ],
+    "outputs": [{ "id": "o_fee", "key": "fee" }],
+    "rows": [
+      {
+        "id": "us_light",
+        "priority": 0,
+        "cells": {
+          "c_country": { "kind": "const", "value": "US" },
+          "c_weight": { "kind": "const", "value": 5 }
+        },
+        "results": { "o_fee": { "kind": "const", "value": 5 } }
+      },
+      {
+        "id": "us_any",
+        "priority": 1,
+        "cells": {
+          "c_country": { "kind": "const", "value": "US" },
+          "c_weight": null
+        },
+        "results": { "o_fee": { "kind": "const", "value": 15 } }
+      },
+      {
+        "id": "intl",
+        "priority": 2,
+        "cells": {
+          "c_country": null,
+          "c_weight": null
+        },
+        "results": { "o_fee": { "kind": "const", "value": 25 } }
+      }
+    ],
+    "defaultRow": { "o_fee": { "kind": "const", "value": 0 } }
+  },
+  "cases": [
+    {
+      "input": { "country": "US", "weight": 3 },
+      "expected": {
+        "status": "success",
+        "matched": ["us_light"],
+        "output": { "fee": 5 }
+      }
+    },
+    {
+      "input": { "country": "US", "weight": 10 },
+      "expected": {
+        "status": "success",
+        "matched": ["us_any"],
+        "output": { "fee": 15 }
+      }
+    },
+    {
+      "input": { "country": "IN", "weight": 2 },
+      "expected": {
+        "status": "success",
+        "matched": ["intl"],
+        "output": { "fee": 25 }
+      }
+    }
+  ]
+}

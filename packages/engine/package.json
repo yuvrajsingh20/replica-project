@@ -11,6 +11,11 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "bench": "tsx bench/decision-table-50.ts",
+    "test:coverage": "vitest run --coverage --coverage.include=packages/engine/src/**/*.ts"
+  },
+  "dependencies": {
+    "@rule-engine/shared": "workspace:*"
   }
 }

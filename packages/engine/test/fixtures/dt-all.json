@@ -1,0 +1,47 @@
+{
+  "name": "dt-all-merge",
+  "schema": {
+    "attributes": [{ "name": "score", "type": "numeric", "required": true }]
+  },
+  "def": {
+    "type": "decision_table",
+    "hitPolicy": "all",
+    "columns": [
+      { "id": "c_score", "left": { "kind": "attr", "path": "score" }, "op": "gte" }
+    ],
+    "outputs": [
+      { "id": "o_band", "key": "band" },
+      { "id": "o_flag", "key": "flag" }
+    ],
+    "rows": [
+      {
+        "id": "low",
+        "priority": 0,
+        "cells": { "c_score": { "kind": "const", "value": 0 } },
+        "results": {
+          "o_band": { "kind": "const", "value": "low" },
+          "o_flag": { "kind": "const", "value": false }
+        }
+      },
+      {
+        "id": "high",
+        "priority": 1,
+        "cells": { "c_score": { "kind": "const", "value": 80 } },
+        "results": {
+          "o_band": { "kind": "const", "value": "high" },
+          "o_flag": { "kind": "const", "value": true }
+        }
+      }
+    ]
+  },
+  "cases": [
+    {
+      "input": { "score": 90 },
+      "expected": {
+        "status": "success",
+        "matched": ["low", "high"],
+        "output": { "band": "high", "flag": true }
+      }
+    }
+  ]
+}

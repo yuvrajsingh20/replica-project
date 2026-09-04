@@ -1,2 +1,3 @@
-/** Phase 1: compileRule / execute. Empty until that phase is approved. */
-export {};
+export { compileRule } from './compile.js';
+export type { CompiledRule, RuleResult } from './types.js';
+export { CompileError } from './errors.js';
