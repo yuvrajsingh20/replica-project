@@ -8,10 +8,12 @@ import { compileRule } from '../src/index.js';
 
 type FixtureCase = {
   input: unknown;
+  globals?: Record<string, unknown>;
   expected: {
     status: string;
     matched: string[];
     output: unknown;
+    meta?: { unknownTokens?: string[] };
   };
 };
 
@@ -43,11 +45,17 @@ describe('golden fixtures', () => {
       const compiled = compileRule(fixture.def, fixture.schema);
       for (const [i, c] of fixture.cases.entries()) {
         it(`case ${i}`, () => {
-          const result = compiled.execute(c.input);
+          const result = compiled.execute(
+            c.input,
+            c.globals !== undefined ? { globals: c.globals } : undefined,
+          );
           expect(result.status).toBe(c.expected.status);
           expect(result.matched).toEqual(c.expected.matched);
           expect(result.output).toEqual(c.expected.output);
           expect(result.meta.latencyMs).toBeTypeOf('number');
+          if (c.expected.meta?.unknownTokens) {
+            expect(result.meta.unknownTokens).toEqual(c.expected.meta.unknownTokens);
+          }
         });
       }
     });

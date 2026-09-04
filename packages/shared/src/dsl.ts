@@ -52,6 +52,7 @@ export const operandSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('const'), value: z.unknown() }),
   z.object({ kind: z.literal('attr'), path: z.string().min(1) }),
   z.object({ kind: z.literal('global'), name: z.string().min(1) }),
+  z.object({ kind: z.literal('output'), key: z.string().min(1) }),
 ]);
 export type Operand = z.infer<typeof operandSchema>;
 
@@ -107,11 +108,13 @@ export const conditionGroupSchema: ZodType<ConditionGroup> = z.lazy(() =>
 // ---------------------------------------------------------------------------
 
 export const FORMULA_BINARY_OPS = ['+', '-', '*', '/', '%'] as const;
-export const FORMULA_FNS = ['min', 'max', 'round', 'abs'] as const;
+export const FORMULA_FNS = ['min', 'max', 'round', 'abs', 'floor', 'ceil'] as const;
 
 export type FormulaAst =
   | { kind: 'const'; value: number }
   | { kind: 'attr'; path: string }
+  | { kind: 'global'; name: string }
+  | { kind: 'output'; key: string }
   | {
       kind: 'binary';
       op: (typeof FORMULA_BINARY_OPS)[number];
@@ -125,6 +128,8 @@ export const formulaAstSchema: ZodType<FormulaAst> = z.lazy(() =>
   z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('const'), value: z.number().finite() }),
     z.object({ kind: z.literal('attr'), path: z.string().min(1) }),
+    z.object({ kind: z.literal('global'), name: z.string().min(1) }),
+    z.object({ kind: z.literal('output'), key: z.string().min(1) }),
     z.object({
       kind: z.literal('binary'),
       op: z.enum(FORMULA_BINARY_OPS),
@@ -158,6 +163,11 @@ export const actionSchema = z.discriminatedUnion('kind', [
     kind: z.literal('formula'),
     key: z.string().min(1),
     expr: formulaAstSchema,
+  }),
+  z.object({
+    kind: z.literal('template'),
+    key: z.string().min(1),
+    text: z.string(),
   }),
 ]);
 export type Action = z.infer<typeof actionSchema>;
@@ -204,12 +214,23 @@ export const rowResultSchema = z.union([
 ]);
 export type RowResult = z.infer<typeof rowResultSchema>;
 
-export const decisionTableRowSchema = z.object({
-  id: z.string().min(1),
-  priority: z.number().int().optional(),
-  cells: z.record(z.string(), cellValueSchema),
-  results: z.record(z.string(), rowResultSchema),
-});
+export const decisionTableRowSchema = z
+  .object({
+    id: z.string().min(1),
+    priority: z.number().int().optional(),
+    cells: z.record(z.string(), cellValueSchema),
+    results: z.record(z.string(), rowResultSchema).optional(),
+    actions: z.array(actionSchema).optional(),
+  })
+  .superRefine((row, ctx) => {
+    if (row.results === undefined && row.actions === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'row requires results or actions',
+        path: ['results'],
+      });
+    }
+  });
 export type DecisionTableRow = z.infer<typeof decisionTableRowSchema>;
 
 function addDuplicateIdIssues(
@@ -276,13 +297,15 @@ function refineDecisionTable(
         });
       }
     }
-    for (const resultId of Object.keys(row.results)) {
-      if (!outputIds.has(resultId)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `unknown output id '${resultId}'`,
-          path: ['rows', ri, 'results', resultId],
-        });
+    if (row.results) {
+      for (const resultId of Object.keys(row.results)) {
+        if (!outputIds.has(resultId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `unknown output id '${resultId}'`,
+            path: ['rows', ri, 'results', resultId],
+          });
+        }
       }
     }
   }

@@ -2,274 +2,530 @@
   "name": "dynamic-pricing",
   "schema": {
     "attributes": [
-      { "name": "brand", "type": "string", "required": true },
-      { "name": "market", "type": "string", "required": true },
-      { "name": "inventory", "type": "numeric", "required": true },
-      { "name": "list_price", "type": "numeric", "required": true },
-      { "name": "global", "type": "json", "required": true }
+      {
+        "name": "brand",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "market",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "inventory",
+        "type": "numeric",
+        "required": true
+      },
+      {
+        "name": "list_price",
+        "type": "numeric",
+        "required": true
+      }
     ]
   },
   "def": {
     "type": "decision_table",
     "hitPolicy": "first",
     "columns": [
-      { "id": "c_brand", "left": { "kind": "attr", "path": "brand" }, "op": "eq" },
-      { "id": "c_market", "left": { "kind": "attr", "path": "market" }, "op": "eq" },
-      { "id": "c_inventory", "left": { "kind": "attr", "path": "inventory" }, "op": "gte" }
+      {
+        "id": "c_brand",
+        "left": {
+          "kind": "attr",
+          "path": "brand"
+        },
+        "op": "eq"
+      },
+      {
+        "id": "c_market",
+        "left": {
+          "kind": "attr",
+          "path": "market"
+        },
+        "op": "eq"
+      },
+      {
+        "id": "c_inventory",
+        "left": {
+          "kind": "attr",
+          "path": "inventory"
+        },
+        "op": "gte"
+      }
     ],
     "outputs": [
-      { "id": "o_price", "key": "final_price" },
-      { "id": "o_msg", "key": "promo_message" }
+      {
+        "id": "o_price",
+        "key": "final_price"
+      },
+      {
+        "id": "o_msg",
+        "key": "promo_message"
+      }
     ],
     "rows": [
       {
         "id": "chevy_domestic_guard",
         "priority": 10,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Chevrolet" },
-          "c_market": { "kind": "const", "value": "domestic" },
+          "c_brand": {
+            "kind": "const",
+            "value": "Chevrolet"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "domestic"
+          },
           "c_inventory": null
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "attr",
+              "path": "list_price"
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
-                { "kind": "attr", "path": "list_price" },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "output",
+                  "key": "discount"
+                },
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Chevrolet domestic: low inventory — list price holds."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: low inventory \u2014 list price holds."
           }
-        }
+        ]
       },
       {
         "id": "chevy_international_guard",
         "priority": 11,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Chevrolet" },
-          "c_market": { "kind": "const", "value": "international" },
+          "c_brand": {
+            "kind": "const",
+            "value": "Chevrolet"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "international"
+          },
           "c_inventory": null
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "attr",
+              "path": "list_price"
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
-                { "kind": "attr", "path": "list_price" },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "output",
+                  "key": "discount"
+                },
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Chevrolet international: low inventory — list price holds."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: low inventory \u2014 list price holds."
           }
-        }
+        ]
       },
       {
         "id": "vw_domestic_guard",
         "priority": 12,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Volkswagen" },
-          "c_market": { "kind": "const", "value": "domestic" },
+          "c_brand": {
+            "kind": "const",
+            "value": "Volkswagen"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "domestic"
+          },
           "c_inventory": null
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "attr",
+              "path": "list_price"
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
-                { "kind": "attr", "path": "list_price" },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "output",
+                  "key": "discount"
+                },
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Volkswagen domestic: low inventory — list price holds."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: low inventory \u2014 list price holds."
           }
-        }
+        ]
       },
       {
         "id": "vw_international_guard",
         "priority": 13,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Volkswagen" },
-          "c_market": { "kind": "const", "value": "international" },
+          "c_brand": {
+            "kind": "const",
+            "value": "Volkswagen"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "international"
+          },
           "c_inventory": null
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "attr",
+              "path": "list_price"
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
-                { "kind": "attr", "path": "list_price" },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "output",
+                  "key": "discount"
+                },
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Volkswagen international: low inventory — list price holds."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: low inventory \u2014 list price holds."
           }
-        }
+        ]
       },
       {
         "id": "chevy_domestic_volume",
         "priority": 0,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Chevrolet" },
-          "c_market": { "kind": "const", "value": "domestic" },
-          "c_inventory": { "kind": "const", "value": 10 }
+          "c_brand": {
+            "kind": "const",
+            "value": "Chevrolet"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "domestic"
+          },
+          "c_inventory": {
+            "kind": "const",
+            "value": 10
+          }
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "call",
+              "name": "round",
+              "args": [
+                {
+                  "kind": "binary",
+                  "op": "*",
+                  "left": {
+                    "kind": "attr",
+                    "path": "list_price"
+                  },
+                  "right": {
+                    "kind": "const",
+                    "value": 0.92
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
                 {
-                  "kind": "call",
-                  "name": "round",
-                  "args": [
-                    {
-                      "kind": "binary",
-                      "op": "*",
-                      "left": { "kind": "attr", "path": "list_price" },
-                      "right": { "kind": "const", "value": 0.92 }
-                    }
-                  ]
+                  "kind": "output",
+                  "key": "discount"
                 },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Chevrolet domestic: volume discount unlocked."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: volume discount unlocked."
           }
-        }
+        ]
       },
       {
         "id": "chevy_international_volume",
         "priority": 1,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Chevrolet" },
-          "c_market": { "kind": "const", "value": "international" },
-          "c_inventory": { "kind": "const", "value": 10 }
+          "c_brand": {
+            "kind": "const",
+            "value": "Chevrolet"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "international"
+          },
+          "c_inventory": {
+            "kind": "const",
+            "value": 10
+          }
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "call",
+              "name": "round",
+              "args": [
+                {
+                  "kind": "binary",
+                  "op": "*",
+                  "left": {
+                    "kind": "attr",
+                    "path": "list_price"
+                  },
+                  "right": {
+                    "kind": "const",
+                    "value": 0.88
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
                 {
-                  "kind": "call",
-                  "name": "round",
-                  "args": [
-                    {
-                      "kind": "binary",
-                      "op": "*",
-                      "left": { "kind": "attr", "path": "list_price" },
-                      "right": { "kind": "const", "value": 0.88 }
-                    }
-                  ]
+                  "kind": "output",
+                  "key": "discount"
                 },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Chevrolet international: export incentive applied."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: export incentive applied."
           }
-        }
+        ]
       },
       {
         "id": "vw_domestic_volume",
         "priority": 2,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Volkswagen" },
-          "c_market": { "kind": "const", "value": "domestic" },
-          "c_inventory": { "kind": "const", "value": 10 }
+          "c_brand": {
+            "kind": "const",
+            "value": "Volkswagen"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "domestic"
+          },
+          "c_inventory": {
+            "kind": "const",
+            "value": 10
+          }
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "call",
+              "name": "round",
+              "args": [
+                {
+                  "kind": "binary",
+                  "op": "*",
+                  "left": {
+                    "kind": "attr",
+                    "path": "list_price"
+                  },
+                  "right": {
+                    "kind": "const",
+                    "value": 0.94
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
                 {
-                  "kind": "call",
-                  "name": "round",
-                  "args": [
-                    {
-                      "kind": "binary",
-                      "op": "*",
-                      "left": { "kind": "attr", "path": "list_price" },
-                      "right": { "kind": "const", "value": 0.94 }
-                    }
-                  ]
+                  "kind": "output",
+                  "key": "discount"
                 },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Volkswagen domestic: dealer volume pricing."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: dealer volume pricing."
           }
-        }
+        ]
       },
       {
         "id": "vw_international_volume",
         "priority": 3,
         "cells": {
-          "c_brand": { "kind": "const", "value": "Volkswagen" },
-          "c_market": { "kind": "const", "value": "international" },
-          "c_inventory": { "kind": "const", "value": 10 }
+          "c_brand": {
+            "kind": "const",
+            "value": "Volkswagen"
+          },
+          "c_market": {
+            "kind": "const",
+            "value": "international"
+          },
+          "c_inventory": {
+            "kind": "const",
+            "value": 10
+          }
         },
-        "results": {
-          "o_price": {
-            "formula": {
+        "actions": [
+          {
+            "kind": "formula",
+            "key": "discount",
+            "expr": {
+              "kind": "call",
+              "name": "round",
+              "args": [
+                {
+                  "kind": "binary",
+                  "op": "*",
+                  "left": {
+                    "kind": "attr",
+                    "path": "list_price"
+                  },
+                  "right": {
+                    "kind": "const",
+                    "value": 0.9
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "kind": "formula",
+            "key": "final_price",
+            "expr": {
               "kind": "call",
               "name": "max",
               "args": [
                 {
-                  "kind": "call",
-                  "name": "round",
-                  "args": [
-                    {
-                      "kind": "binary",
-                      "op": "*",
-                      "left": { "kind": "attr", "path": "list_price" },
-                      "right": { "kind": "const", "value": 0.9 }
-                    }
-                  ]
+                  "kind": "output",
+                  "key": "discount"
                 },
-                { "kind": "attr", "path": "global.min_price_policy" }
+                {
+                  "kind": "global",
+                  "name": "min_price_policy"
+                }
               ]
             }
           },
-          "o_msg": {
-            "kind": "const",
-            "value": "Volkswagen international: export incentive applied."
+          {
+            "kind": "template",
+            "key": "promo_message",
+            "text": "{{attr.brand}} {{attr.market}}: export incentive applied."
           }
-        }
+        ]
       }
     ],
     "defaultRow": {
-      "o_price": { "kind": "attr", "path": "list_price" },
-      "o_msg": { "kind": "const", "value": "No brand program matched — list price." }
+      "o_price": {
+        "kind": "attr",
+        "path": "list_price"
+      },
+      "o_msg": {
+        "kind": "const",
+        "value": "No brand program matched \u2014 list price."
+      }
     }
   },
   "cases": [
@@ -278,12 +534,16 @@
         "brand": "Chevrolet",
         "market": "domestic",
         "inventory": 40,
-        "list_price": 25000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 25000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["chevy_domestic_volume"],
+        "matched": [
+          "chevy_domestic_volume"
+        ],
         "output": {
           "final_price": 23000,
           "promo_message": "Chevrolet domestic: volume discount unlocked."
@@ -295,12 +555,16 @@
         "brand": "Chevrolet",
         "market": "international",
         "inventory": 40,
-        "list_price": 20000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 20000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["chevy_international_volume"],
+        "matched": [
+          "chevy_international_volume"
+        ],
         "output": {
           "final_price": 18000,
           "promo_message": "Chevrolet international: export incentive applied."
@@ -312,15 +576,19 @@
         "brand": "Chevrolet",
         "market": "domestic",
         "inventory": 4,
-        "list_price": 25000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 25000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["chevy_domestic_guard"],
+        "matched": [
+          "chevy_domestic_guard"
+        ],
         "output": {
           "final_price": 25000,
-          "promo_message": "Chevrolet domestic: low inventory — list price holds."
+          "promo_message": "Chevrolet domestic: low inventory \u2014 list price holds."
         }
       }
     },
@@ -329,15 +597,19 @@
         "brand": "Chevrolet",
         "market": "domestic",
         "inventory": 4,
-        "list_price": 15000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 15000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["chevy_domestic_guard"],
+        "matched": [
+          "chevy_domestic_guard"
+        ],
         "output": {
           "final_price": 18000,
-          "promo_message": "Chevrolet domestic: low inventory — list price holds."
+          "promo_message": "Chevrolet domestic: low inventory \u2014 list price holds."
         }
       }
     },
@@ -346,15 +618,19 @@
         "brand": "Chevrolet",
         "market": "international",
         "inventory": 3,
-        "list_price": 20000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 20000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["chevy_international_guard"],
+        "matched": [
+          "chevy_international_guard"
+        ],
         "output": {
           "final_price": 20000,
-          "promo_message": "Chevrolet international: low inventory — list price holds."
+          "promo_message": "Chevrolet international: low inventory \u2014 list price holds."
         }
       }
     },
@@ -363,12 +639,16 @@
         "brand": "Volkswagen",
         "market": "domestic",
         "inventory": 25,
-        "list_price": 22000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 22000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["vw_domestic_volume"],
+        "matched": [
+          "vw_domestic_volume"
+        ],
         "output": {
           "final_price": 20680,
           "promo_message": "Volkswagen domestic: dealer volume pricing."
@@ -380,15 +660,19 @@
         "brand": "Volkswagen",
         "market": "domestic",
         "inventory": 2,
-        "list_price": 22000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 22000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["vw_domestic_guard"],
+        "matched": [
+          "vw_domestic_guard"
+        ],
         "output": {
           "final_price": 22000,
-          "promo_message": "Volkswagen domestic: low inventory — list price holds."
+          "promo_message": "Volkswagen domestic: low inventory \u2014 list price holds."
         }
       }
     },
@@ -397,12 +681,16 @@
         "brand": "Volkswagen",
         "market": "international",
         "inventory": 25,
-        "list_price": 22000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 22000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["vw_international_volume"],
+        "matched": [
+          "vw_international_volume"
+        ],
         "output": {
           "final_price": 19800,
           "promo_message": "Volkswagen international: export incentive applied."
@@ -414,15 +702,19 @@
         "brand": "Volkswagen",
         "market": "international",
         "inventory": 2,
-        "list_price": 22000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 22000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["vw_international_guard"],
+        "matched": [
+          "vw_international_guard"
+        ],
         "output": {
           "final_price": 22000,
-          "promo_message": "Volkswagen international: low inventory — list price holds."
+          "promo_message": "Volkswagen international: low inventory \u2014 list price holds."
         }
       }
     },
@@ -431,15 +723,19 @@
         "brand": "Toyota",
         "market": "domestic",
         "inventory": 50,
-        "list_price": 30000,
-        "global": { "min_price_policy": 18000 }
+        "list_price": 30000
+      },
+      "globals": {
+        "min_price_policy": 18000
       },
       "expected": {
         "status": "success",
-        "matched": ["default"],
+        "matched": [
+          "default"
+        ],
         "output": {
           "final_price": 30000,
-          "promo_message": "No brand program matched — list price."
+          "promo_message": "No brand program matched \u2014 list price."
         }
       }
     }

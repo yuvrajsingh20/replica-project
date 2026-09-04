@@ -6,8 +6,33 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "dev": "node -e \"console.error('api dev is Phase 2'); process.exit(1)\"",
-    "db:migrate": "node -e \"console.error('db:migrate is Phase 2'); process.exit(1)\"",
-    "db:studio": "node -e \"console.error('db:studio is Phase 2'); process.exit(1)\""
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fastify/helmet": "^13.1.1",
+    "@fastify/swagger": "^9.8.1",
+    "@fastify/swagger-ui": "^6.1.1",
+    "@rule-engine/engine": "workspace:*",
+    "@rule-engine/shared": "workspace:*",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.12.3",
+    "fastify-type-provider-zod": "^4.0.2",
+    "nanoid": "^6.0.1",
+    "pino": "^10.3.1",
+    "postgres": "^3.4.8",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "dotenv": "^16.6.1",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.19.3"
   }
 }

@@ -59,6 +59,46 @@ describe('parseRuleDef', () => {
     expect(def.type).toBe('decision_table');
   });
 
+  it('parses output operand, template action, floor/ceil', () => {
+    const def = parseRuleDef({
+      type: 'simple',
+      when: { logic: 'and', items: [] },
+      then: [
+        {
+          kind: 'formula',
+          key: 'discount',
+          expr: {
+            kind: 'call',
+            name: 'floor',
+            args: [{ kind: 'const', value: 1.8 }],
+          },
+        },
+        {
+          kind: 'formula',
+          key: 'final_price',
+          expr: {
+            kind: 'call',
+            name: 'ceil',
+            args: [{ kind: 'output', key: 'discount' }],
+          },
+        },
+        {
+          kind: 'set',
+          key: 'x',
+          value: { kind: 'output', key: 'final_price' },
+        },
+        {
+          kind: 'template',
+          key: 'msg',
+          text: 'hi {{attr.name}}',
+        },
+      ],
+    });
+    expect(def.type).toBe('simple');
+    if (def.type !== 'simple') return;
+    expect(def.then).toHaveLength(4);
+  });
+
   it('fails an invalid DSL with a Zod path', () => {
     const result = ruleDefSchema.safeParse({
       type: 'simple',

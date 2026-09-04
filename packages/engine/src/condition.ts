@@ -1,6 +1,7 @@
 import type { Condition, ConditionGroup } from '@rule-engine/shared';
+import type { CompiledPredicate } from './operators.js';
+import { compileOperator } from './operators.js';
 import { compileOperand, compileRight } from './operand.js';
-import { compileOperator, type CompiledPredicate } from './operators.js';
 
 function isConditionGroup(item: Condition | ConditionGroup): item is ConditionGroup {
   return 'logic' in item && 'items' in item && !('op' in item);
@@ -9,7 +10,7 @@ function isConditionGroup(item: Condition | ConditionGroup): item is ConditionGr
 export function compileCondition(cond: Condition, path: string): CompiledPredicate {
   const left = compileOperand(cond.left, `${path}.left`);
   const right = compileRight(cond.right, `${path}.right`);
-  return compileOperator(cond.op, left, right, `${path}.op`);
+  return compileOperator(cond.op, left, right, `${path}.op`, cond.right);
 }
 
 export function compileConditionGroup(group: ConditionGroup, path: string): CompiledPredicate {
@@ -22,7 +23,7 @@ export function compileConditionGroup(group: ConditionGroup, path: string): Comp
   });
 
   if (group.logic === 'and') {
-    return (input) => items.every((fn) => fn(input));
+    return (env) => items.every((fn) => fn(env));
   }
-  return (input) => items.some((fn) => fn(input));
+  return (env) => items.some((fn) => fn(env));
 }

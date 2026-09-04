@@ -4,20 +4,23 @@
   "type": "module",
   "packageManager": "pnpm@10.33.2",
   "engines": {
-    "node": ">=22"
+    "node": ">=20"
   },
   "scripts": {
-    "dev": "pnpm --filter @rule-engine/api dev",
+    "dev": "pnpm --filter @rule-engine/web dev",
+    "dev:api": "pnpm --filter @rule-engine/api dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:rls": "vitest run packages/db/test/rls.test.ts",
     "test:watch": "vitest",
-    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:rls",
     "bench:engine": "pnpm --filter @rule-engine/engine bench",
     "test:engine:coverage": "vitest run --coverage packages/engine",
-    "db:migrate": "pnpm --filter @rule-engine/api db:migrate",
-    "db:studio": "pnpm --filter @rule-engine/api db:studio",
+    "db:migrate": "pnpm --filter @rule-engine/db db:migrate",
+    "db:seed": "pnpm --filter @rule-engine/db db:seed",
+    "db:studio": "pnpm --filter @rule-engine/db exec drizzle-kit studio",
     "format": "prettier --write ."
   },
   "devDependencies": {

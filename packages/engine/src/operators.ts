@@ -1,7 +1,12 @@
-import type { Operator } from '@rule-engine/shared';
+import type { Operand, Operator } from '@rule-engine/shared';
+import type { ExecEnv } from './env.js';
 import { CompileError } from './errors.js';
-import type { CompiledOperand } from './operand.js';
-import { resolveRight } from './operand.js';
+import {
+  constRightValues,
+  isConstRight,
+  resolveRight,
+  type CompiledOperand,
+} from './operand.js';
 
 function isNullish(v: unknown): boolean {
   return v === null || v === undefined;
@@ -46,43 +51,52 @@ function valuesEqual(a: unknown, b: unknown): boolean {
   return Object.is(a, b);
 }
 
-export type CompiledPredicate = (input: Record<string, unknown>) => boolean;
+function setHas(set: Set<unknown>, value: unknown): boolean {
+  for (const item of set) {
+    if (valuesEqual(value, item)) return true;
+  }
+  return false;
+}
+
+export type CompiledPredicate = (env: ExecEnv) => boolean;
 
 export function compileOperator(
   op: Operator,
   left: CompiledOperand,
   right: CompiledOperand | CompiledOperand[] | undefined,
   path: string,
+  rightSource?: Operand | Operand[],
 ): CompiledPredicate {
   if (op === 'matches') {
     if (right === undefined || Array.isArray(right)) {
       throw new CompileError('matches requires a single right operand', path);
     }
-    // Probe const-only pattern at compile time when possible by evaluating empty input —
-    // pattern must be a string; we compile regex lazily on first execute if attr-backed,
-    // but prefer const: call right once with empty object if it's a pure const.
-    const probe = right({});
-    if (typeof probe === 'string') {
+    if (
+      rightSource !== undefined &&
+      !Array.isArray(rightSource) &&
+      rightSource.kind === 'const' &&
+      typeof rightSource.value === 'string'
+    ) {
       let re: RegExp;
       try {
-        re = new RegExp(probe);
+        re = new RegExp(rightSource.value);
       } catch (err) {
         throw new CompileError(
           `invalid regex: ${err instanceof Error ? err.message : String(err)}`,
           path,
         );
       }
-      return (input) => {
-        const l = left(input);
+      return (env) => {
+        const l = left(env);
         if (isNullish(l)) return false;
         const s = asString(l);
         if (s === null) return false;
         return re.test(s);
       };
     }
-    return (input) => {
-      const l = left(input);
-      const r = right(input);
+    return (env) => {
+      const l = left(env);
+      const r = right(env);
       if (isNullish(l) || isNullish(r)) return false;
       const s = asString(l);
       const pattern = asString(r);
@@ -96,55 +110,49 @@ export function compileOperator(
   }
 
   if (op === 'in' || op === 'not_in' || op === 'any_in' || op === 'all_in') {
-    return (input) => {
-      const l = left(input);
-      const r = resolveRight(right, input);
+    const prebuilt =
+      rightSource !== undefined &&
+      Array.isArray(rightSource) &&
+      isConstRight(rightSource)
+        ? new Set(constRightValues(rightSource))
+        : undefined;
+
+    return (env) => {
+      const l = left(env);
+      const r = prebuilt ?? resolveRight(right, env);
+      const set = r instanceof Set ? r : membershipSet(r);
 
       if (op === 'in' || op === 'not_in') {
         if (isNullish(l)) return false;
-        const set = membershipSet(r);
         if (!set) {
           if (isNullish(r)) return false;
           const hit = valuesEqual(l, r);
           return op === 'in' ? hit : !hit;
         }
-        let hit = false;
-        for (const item of set) {
-          if (valuesEqual(l, item)) {
-            hit = true;
-            break;
-          }
-        }
+        const hit = setHas(set, l);
         return op === 'in' ? hit : !hit;
       }
 
       const list = asArray(l);
       if (!list) return false;
-      const set = membershipSet(r);
       if (!set) return false;
       if (op === 'any_in') {
         return list.some((item) => {
           if (isNullish(item)) return false;
-          for (const s of set) {
-            if (valuesEqual(item, s)) return true;
-          }
-          return false;
+          return setHas(set, item);
         });
       }
       if (list.length === 0) return true;
       return list.every((item) => {
         if (isNullish(item)) return false;
-        for (const s of set) {
-          if (valuesEqual(item, s)) return true;
-        }
-        return false;
+        return setHas(set, item);
       });
     };
   }
 
-  return (input) => {
-    const l = left(input);
-    const r = resolveRight(right, input);
+  return (env) => {
+    const l = left(env);
+    const r = resolveRight(right, env);
 
     switch (op) {
       case 'is_null':
@@ -154,8 +162,6 @@ export function compileOperator(
       case 'eq': {
         if (isNullish(l) && isNullish(r)) return true;
         if (isNullish(l) || isNullish(r)) {
-          // eq null: one side nullish — only true when both nullish (handled above)
-          // Spec: eq null is allowed; if one is null and other isn't → false
           return false;
         }
         return valuesEqual(l, r);

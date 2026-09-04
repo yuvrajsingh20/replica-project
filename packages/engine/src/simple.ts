@@ -1,8 +1,9 @@
 import type { SimpleRuleDef } from '@rule-engine/shared';
 import { applyActions, compileActions } from './action.js';
 import { compileConditionGroup } from './condition.js';
+import type { ExecEnv } from './env.js';
 
-export type SimpleExecutor = (input: Record<string, unknown>) => {
+export type SimpleExecutor = (env: ExecEnv) => {
   status: 'success' | 'no_match';
   output: Record<string, unknown>;
   matched: string[];
@@ -14,20 +15,22 @@ export function compileSimpleRule(def: SimpleRuleDef): SimpleExecutor {
   const thenActions = compileActions(def.then, 'then');
   const elseActions = def.else ? compileActions(def.else, 'else') : undefined;
 
-  return (input) => {
-    const matched = when(input);
+  return (env) => {
+    const matched = when(env);
     if (matched) {
+      env.output = {};
       return {
         status: 'success',
-        output: applyActions(thenActions, input),
+        output: applyActions(thenActions, env),
         matched: ['then'],
         evaluated: 1,
       };
     }
     if (elseActions) {
+      env.output = {};
       return {
         status: 'success',
-        output: applyActions(elseActions, input),
+        output: applyActions(elseActions, env),
         matched: ['else'],
         evaluated: 1,
       };

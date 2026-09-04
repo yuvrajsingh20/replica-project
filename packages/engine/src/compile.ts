@@ -1,10 +1,11 @@
 import type { InputSchema, RuleDef } from '@rule-engine/shared';
 import { coerceInput } from './coerce.js';
 import { compileDecisionTable } from './decision-table.js';
+import { createExecEnv, type ExecuteContext } from './env.js';
 import { compileSimpleRule } from './simple.js';
 import type { CompiledRule, RuleResult } from './types.js';
 
-export type { CompiledRule, RuleResult } from './types.js';
+export type { CompiledRule, RuleResult, ExecuteContext } from './types.js';
 export { CompileError } from './errors.js';
 
 export function compileRule(def: RuleDef, schema: InputSchema): CompiledRule {
@@ -12,7 +13,7 @@ export function compileRule(def: RuleDef, schema: InputSchema): CompiledRule {
     def.type === 'simple' ? compileSimpleRule(def) : compileDecisionTable(def);
 
   return {
-    execute(input: unknown): RuleResult {
+    execute(input: unknown, ctx?: ExecuteContext): RuleResult {
       const start = performance.now();
       try {
         const coerced = coerceInput(input, schema);
@@ -33,7 +34,9 @@ export function compileRule(def: RuleDef, schema: InputSchema): CompiledRule {
           };
         }
 
-        const result = executor(coerced.value);
+        const env = createExecEnv(coerced.value, ctx);
+        const result = executor(env);
+        const unknownTokens = [...new Set(env.unknownTokens)];
         return {
           status: result.status,
           output: result.output,
@@ -41,6 +44,7 @@ export function compileRule(def: RuleDef, schema: InputSchema): CompiledRule {
           meta: {
             latencyMs: performance.now() - start,
             evaluated: result.evaluated,
+            ...(unknownTokens.length > 0 ? { unknownTokens } : {}),
           },
         };
       } catch (err) {

@@ -185,6 +185,34 @@ describe('null semantics', () => {
     };
     expect(compileRule(def, { attributes: [] }).execute({}).matched).toEqual(['then']);
   });
+
+  it('resolves globals from execute ctx; missing stays undefined', () => {
+    const def: RuleDef = {
+      type: 'simple',
+      when: {
+        logic: 'and',
+        items: [
+          {
+            left: { kind: 'global', name: 'min_price_policy' },
+            op: 'gte',
+            right: { kind: 'const', value: 100 },
+          },
+        ],
+      },
+      then: [
+        {
+          kind: 'set',
+          key: 'floor',
+          value: { kind: 'global', name: 'min_price_policy' },
+        },
+      ],
+    };
+    const rule = compileRule(def, { attributes: [] });
+    expect(rule.execute({}).status).toBe('no_match');
+    expect(
+      rule.execute({}, { globals: { min_price_policy: 18000 } }).output,
+    ).toEqual({ floor: 18000 });
+  });
 });
 
 describe('operators', () => {
@@ -416,12 +444,139 @@ describe('formula', () => {
             ],
           },
         },
+        {
+          kind: 'formula',
+          key: 'fl',
+          expr: {
+            kind: 'call',
+            name: 'floor',
+            args: [{ kind: 'const', value: 3.9 }],
+          },
+        },
+        {
+          kind: 'formula',
+          key: 'cl',
+          expr: {
+            kind: 'call',
+            name: 'ceil',
+            args: [{ kind: 'const', value: 3.1 }],
+          },
+        },
       ],
     };
     expect(compileRule(def, numericSchema).execute({ n: 1 }).output).toEqual({
       div: 5,
       mod: 1,
       minv: 1,
+      fl: 3,
+      cl: 4,
+    });
+  });
+});
+
+describe('output operand and template action', () => {
+  it('reads earlier action output and renders template tokens', () => {
+    const def: RuleDef = {
+      type: 'simple',
+      when: { logic: 'and', items: [] },
+      then: [
+        {
+          kind: 'formula',
+          key: 'discount',
+          expr: {
+            kind: 'binary',
+            op: '*',
+            left: { kind: 'attr', path: 'n' },
+            right: { kind: 'const', value: 0.5 },
+          },
+        },
+        {
+          kind: 'formula',
+          key: 'final_price',
+          expr: {
+            kind: 'call',
+            name: 'max',
+            args: [
+              { kind: 'output', key: 'discount' },
+              { kind: 'global', name: 'min_price_policy' },
+            ],
+          },
+        },
+        {
+          kind: 'template',
+          key: 'promo_message',
+          text: 'n={{attr.n}} floor={{global.min_price_policy}} out={{output.final_price}} miss={{nope.x}}',
+        },
+      ],
+    };
+    const rule = compileRule(def, numericSchema);
+    const result = rule.execute({ n: 10 }, { globals: { min_price_policy: 8 } });
+    expect(result.output).toEqual({
+      discount: 5,
+      final_price: 8,
+      promo_message: 'n=10 floor=8 out=8 miss=',
+    });
+    expect(result.meta.unknownTokens).toEqual(['nope.x']);
+  });
+
+  it('same rule yields different final_price for different globals snapshots', () => {
+    const def: RuleDef = {
+      type: 'decision_table',
+      hitPolicy: 'first',
+      columns: [
+        { id: 'c_brand', left: { kind: 'attr', path: 'brand' }, op: 'eq' },
+      ],
+      outputs: [{ id: 'o_price', key: 'final_price' }],
+      rows: [
+        {
+          id: 'chevy',
+          cells: { c_brand: { kind: 'const', value: 'Chevrolet' } },
+          actions: [
+            {
+              kind: 'formula',
+              key: 'discount',
+              expr: {
+                kind: 'call',
+                name: 'round',
+                args: [
+                  {
+                    kind: 'binary',
+                    op: '*',
+                    left: { kind: 'attr', path: 'list_price' },
+                    right: { kind: 'const', value: 0.88 },
+                  },
+                ],
+              },
+            },
+            {
+              kind: 'formula',
+              key: 'final_price',
+              expr: {
+                kind: 'call',
+                name: 'max',
+                args: [
+                  { kind: 'output', key: 'discount' },
+                  { kind: 'global', name: 'min_price_policy' },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const schema: InputSchema = {
+      attributes: [
+        { name: 'brand', type: 'string', required: true },
+        { name: 'list_price', type: 'numeric', required: true },
+      ],
+    };
+    const rule = compileRule(def, schema);
+    const input = { brand: 'Chevrolet', list_price: 20000 };
+    expect(rule.execute(input, { globals: { min_price_policy: 18000 } }).output).toEqual({
+      final_price: 18000,
+    });
+    expect(rule.execute(input, { globals: { min_price_policy: 17000 } }).output).toEqual({
+      final_price: 17600,
     });
   });
 });
