@@ -46,3 +46,12 @@ export type {
   DecisionTableDef,
   RuleDef,
 } from './dsl.js';
+
+export {
+  can as canLifecycle,
+  next as nextLifecycle,
+  LifecycleError,
+  TRANSITIONS as LIFECYCLE_TRANSITIONS,
+} from './lifecycle.js';
+
+export type { RuleLifecycleStatus, LifecycleAction } from './lifecycle.js';
